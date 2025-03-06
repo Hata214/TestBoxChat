@@ -16,7 +16,7 @@ npm install
    - MESSAGE CONTENT INTENT
 5. Sao chép token của bot
 6. Lấy API key của Gemini AI từ [Google AI Studio](https://makersuite.google.com/app/apikey)
-7. Chỉnh sửa file `.env` và thêm:
+7. Tạo file `.env` từ file `.env.example` và thêm:
    ```
    DISCORD_TOKEN=your_discord_bot_token_here
    GEMINI_API_KEY=your_gemini_api_key_here
@@ -63,9 +63,55 @@ node index.js
 
 Lưu ý: Giao diện web trên Vercel sẽ chạy ở chế độ demo, không có kết nối thực với bot Discord.
 
-### Triển khai backend (WebSocket + Discord Bot)
+### Triển khai backend lên Fly.io
 
-Để có kết nối thực với bot Discord, bạn cần triển khai backend lên một nền tảng hỗ trợ WebSocket như:
+1. Cài đặt Fly CLI:
+   ```
+   # Trên macOS
+   brew install flyctl
+   
+   # Trên Windows (với PowerShell)
+   iwr https://fly.io/install.ps1 -useb | iex
+   
+   # Trên Linux
+   curl -L https://fly.io/install.sh | sh
+   ```
+
+2. Đăng nhập vào Fly.io:
+   ```
+   fly auth login
+   ```
+
+3. Khởi tạo ứng dụng (nếu chưa có file fly.toml):
+   ```
+   fly launch
+   ```
+
+4. Thiết lập các biến môi trường:
+   ```
+   fly secrets set DISCORD_TOKEN=your_discord_token_here
+   fly secrets set GEMINI_API_KEY=your_gemini_api_key_here
+   fly secrets set NODE_ENV=production
+   ```
+
+5. Triển khai ứng dụng:
+   ```
+   fly deploy
+   ```
+
+6. Kiểm tra logs:
+   ```
+   fly logs
+   ```
+
+7. Mở ứng dụng trong trình duyệt:
+   ```
+   fly open
+   ```
+
+Sau khi triển khai, bạn có thể truy cập ứng dụng tại `https://discord-chatbox.fly.dev` và kết nối WebSocket tại `wss://discord-chatbox.fly.dev`.
+
+### Triển khai backend lên các nền tảng khác
 
 #### Heroku:
 1. Tạo tài khoản [Heroku](https://heroku.com)

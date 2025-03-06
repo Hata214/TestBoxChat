@@ -6,12 +6,61 @@ const http = require('http');
 const WebSocket = require('ws');
 const { Client, GatewayIntentBits } = require('discord.js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const cors = require('cors');
 require('dotenv').config();
 
 // Khởi tạo Express app
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+
+// Cấu hình CORS
+app.use(cors({
+    origin: function (origin, callback) {
+        // Cho phép tất cả các origin hoặc danh sách cụ thể
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:5000',
+            'https://testboxchat.vercel.app',
+            'https://test-box-chat-6w6gb3eai-hata214s-projects.vercel.app'
+        ];
+
+        // Cho phép requests không có origin (như từ Postman hoặc curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS policy violation'));
+        }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true
+}));
+
+// Cấu hình WebSocket với CORS
+const wss = new WebSocket.Server({
+    server,
+    verifyClient: (info, cb) => {
+        const origin = info.origin || info.req.headers.origin;
+
+        // Kiểm tra origin cho WebSocket
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:5000',
+            'https://testboxchat.vercel.app',
+            'https://test-box-chat-6w6gb3eai-hata214s-projects.vercel.app'
+        ];
+
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development' || !origin) {
+            cb(true);
+        } else {
+            cb(false, 403, 'CORS policy violation');
+        }
+    }
+});
+
+// Middleware để xử lý JSON
+app.use(express.json());
 
 // Phục vụ các file tĩnh
 app.use(express.static('.'));
@@ -34,8 +83,8 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
 let connections = [];
 
 // Xử lý kết nối WebSocket
-wss.on('connection', (ws) => {
-    console.log('Client connected');
+wss.on('connection', (ws, req) => {
+    console.log('Client connected from:', req.socket.remoteAddress);
     connections.push(ws);
 
     // Gửi tin nhắn chào mừng
@@ -155,13 +204,55 @@ client.login(process.env.DISCORD_TOKEN)
         console.error('Discord login error:', error);
     });
 
-// Cập nhật file HTML để kết nối với WebSocket
+// API endpoint để kiểm tra trạng thái server
+app.get('/api/status', (req, res) => {
+    res.json({
+        status: 'online',
+        connections: connections.length,
+        discord_connected: client.isReady(),
+        version: '1.0.0',
+        environment: process.env.NODE_ENV || 'production'
+    });
+});
+
+// Root endpoint
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/chatbox.html');
 });
 
+// Xử lý lỗi CORS
+app.use((err, req, res, next) => {
+    if (err.message === 'CORS policy violation') {
+        res.status(403).json({
+            error: 'CORS policy violation',
+            message: 'Origin not allowed'
+        });
+    } else {
+        next(err);
+    }
+});
+
+// Xử lý lỗi 404
+app.use((req, res) => {
+    res.status(404).json({
+        error: 'Not Found',
+        message: 'The requested resource was not found'
+    });
+});
+
+// Xử lý lỗi 500
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({
+        error: 'Internal Server Error',
+        message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
+    });
+});
+
 // Khởi động server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`WebSocket server is ready`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 
