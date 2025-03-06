@@ -13,28 +13,42 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
+// Cấu hình CORS từ biến môi trường
+const corsAllowAllOrigins = process.env.CORS_ALLOW_ALL_ORIGINS === 'true';
+const corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS ?
+    process.env.CORS_ALLOWED_ORIGINS.split(',') :
+    [
+        'http://localhost:3000',
+        'http://localhost:5000',
+        'http://localhost:8080',
+        'https://testboxchat.vercel.app',
+        'https://test-box-chat-6w6gb3eai-hata214s-projects.vercel.app',
+        'https://discord-chatbox.fly.dev',
+        'https://discord-chatbox-web.vercel.app'
+    ];
+
 // Cấu hình CORS
 app.use(cors({
     origin: function (origin, callback) {
-        // Cho phép tất cả các origin hoặc danh sách cụ thể
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'http://localhost:5000',
-            'https://testboxchat.vercel.app',
-            'https://test-box-chat-6w6gb3eai-hata214s-projects.vercel.app'
-        ];
+        // Cho phép tất cả các origin nếu được cấu hình
+        if (corsAllowAllOrigins) {
+            return callback(null, true);
+        }
 
         // Cho phép requests không có origin (như từ Postman hoặc curl)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+        if (corsAllowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
             callback(null, true);
         } else {
+            console.log(`CORS blocked for origin: ${origin}`);
             callback(new Error('CORS policy violation'));
         }
     },
     methods: ['GET', 'POST', 'OPTIONS'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400 // 24 giờ
 }));
 
 // Cấu hình WebSocket với CORS
@@ -43,17 +57,16 @@ const wss = new WebSocket.Server({
     verifyClient: (info, cb) => {
         const origin = info.origin || info.req.headers.origin;
 
-        // Kiểm tra origin cho WebSocket
-        const allowedOrigins = [
-            'http://localhost:3000',
-            'http://localhost:5000',
-            'https://testboxchat.vercel.app',
-            'https://test-box-chat-6w6gb3eai-hata214s-projects.vercel.app'
-        ];
+        // Cho phép tất cả các origin nếu được cấu hình
+        if (corsAllowAllOrigins) {
+            return cb(true);
+        }
 
-        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development' || !origin) {
+        // Kiểm tra origin cho WebSocket
+        if (corsAllowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development' || !origin) {
             cb(true);
         } else {
+            console.log(`WebSocket CORS blocked for origin: ${origin}`);
             cb(false, 403, 'CORS policy violation');
         }
     }
@@ -206,12 +219,22 @@ client.login(process.env.DISCORD_TOKEN)
 
 // API endpoint để kiểm tra trạng thái server
 app.get('/api/status', (req, res) => {
+    // Thêm CORS headers cho API endpoints
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     res.json({
         status: 'online',
         connections: connections.length,
         discord_connected: client.isReady(),
         version: '1.0.0',
-        environment: process.env.NODE_ENV || 'production'
+        environment: process.env.NODE_ENV || 'production',
+        cors_enabled: true
     });
 });
 
@@ -220,12 +243,26 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/chatbox.html');
 });
 
+// Endpoint để kiểm tra CORS
+app.get('/api/cors-test', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.json({
+        success: true,
+        message: 'CORS is working correctly',
+        origin: req.headers.origin || 'Unknown',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Xử lý lỗi CORS
 app.use((err, req, res, next) => {
     if (err.message === 'CORS policy violation') {
+        console.error(`CORS Error: ${req.headers.origin} tried to access ${req.path}`);
         res.status(403).json({
             error: 'CORS policy violation',
-            message: 'Origin not allowed'
+            message: 'Origin not allowed',
+            origin: req.headers.origin || 'Unknown',
+            path: req.path
         });
     } else {
         next(err);

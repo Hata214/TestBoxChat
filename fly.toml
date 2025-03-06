@@ -16,6 +16,21 @@ primary_region = "sin" # Singapore region, you can change to a region closer to 
   min_machines_running = 1
   processes = ["app"]
 
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 1000
+    soft_limit = 500
+
+  [[http_service.headers]]
+    for = "/*"
+    [http_service.headers.values]
+      Access-Control-Allow-Origin = "*"
+      Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+      Access-Control-Allow-Headers = "Content-Type, Authorization, X-Requested-With"
+      X-Frame-Options = "DENY"
+      X-Content-Type-Options = "nosniff"
+      X-XSS-Protection = "1; mode=block"
+
 [[services.ports]]
   port = 80
   handlers = ["http"]
@@ -25,6 +40,7 @@ primary_region = "sin" # Singapore region, you can change to a region closer to 
   port = 443
   handlers = ["tls", "http"]
 
+# WebSocket support
 [[services.tcp_checks]]
   interval = "15s"
   timeout = "2s"
