@@ -236,16 +236,40 @@
             font-weight: bold;
             color: #7289da;
         }
+
+        .server-selector {
+            margin-bottom: 15px;
+            background-color: #202225;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .server-selector select {
+            width: 100%;
+            padding: 8px;
+            background-color: #40444b;
+            color: #dcddde;
+            border: none;
+            border-radius: 4px;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSgV3cP3AkRj3GL5iFfFT8Kzc9IkcyA3FvqA&s"
-                alt="Discord Bot">
+            <img src="https://i.imgur.com/AfFp7pu.png" alt="Discord Bot">
             <h1>Discord Chatbox với Gemini AI</h1>
         </header>
+
+        <div class="server-selector">
+            <select id="serverSelector">
+                <option value="demo">Demo Mode (Mô phỏng)</option>
+                <option value="ws://localhost:3000">Localhost (Development)</option>
+                <option value="wss://your-backend-server.herokuapp.com">Server Production</option>
+                <!-- Thêm các server khác nếu cần -->
+            </select>
+        </div>
 
         <div class="connection-status" id="connectionStatus">
             Đang kết nối...
@@ -254,8 +278,7 @@
         <div class="chat-container">
             <div class="chat-messages" id="chatMessages">
                 <div class="message bot-message">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSgV3cP3AkRj3GL5iFfFT8Kzc9IkcyA3FvqA&s"
-                        alt="Bot" class="message-avatar">
+                    <img src="https://i.imgur.com/AfFp7pu.png" alt="Bot" class="message-avatar">
                     <div class="message-content">
                         <div class="message-sender">Botchat</div>
                         <div class="message-text">Xin chào! Tôi là bot chat AI sử dụng Gemini. Bạn có thể bắt đầu trò
@@ -295,16 +318,36 @@
             const sendButton = document.getElementById('sendButton');
             const typingIndicator = document.getElementById('typingIndicator');
             const connectionStatus = document.getElementById('connectionStatus');
+            const serverSelector = document.getElementById('serverSelector');
 
             // Kết nối WebSocket
             let socket;
             let isConnected = false;
+            let isDemo = true;
 
-            function connectWebSocket() {
-                // Lấy host hiện tại
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const host = window.location.host;
-                const wsUrl = `${protocol}//${host}`;
+            // Xử lý khi thay đổi server
+            serverSelector.addEventListener('change', function () {
+                // Đóng kết nối hiện tại nếu có
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.close();
+                }
+
+                const serverValue = serverSelector.value;
+
+                if (serverValue === 'demo') {
+                    isDemo = true;
+                    isConnected = true;
+                    connectionStatus.textContent = 'Chế độ Demo (không có kết nối thực)';
+                    connectionStatus.classList.add('connected');
+                    connectionStatus.classList.remove('disconnected');
+                } else {
+                    isDemo = false;
+                    connectWebSocket(serverValue);
+                }
+            });
+
+            function connectWebSocket(wsUrl) {
+                if (isDemo) return;
 
                 socket = new WebSocket(wsUrl);
 
@@ -324,7 +367,7 @@
                     connectionStatus.classList.remove('connected');
 
                     // Thử kết nối lại sau 5 giây
-                    setTimeout(connectWebSocket, 5000);
+                    setTimeout(() => connectWebSocket(wsUrl), 5000);
                 };
 
                 socket.onerror = function (error) {
@@ -353,8 +396,12 @@
                 };
             }
 
-            // Kết nối WebSocket khi trang được tải
-            connectWebSocket();
+            // Kết nối WebSocket khi trang được tải (chế độ demo mặc định)
+            isDemo = true;
+            isConnected = true;
+            connectionStatus.textContent = 'Chế độ Demo (không có kết nối thực)';
+            connectionStatus.classList.add('connected');
+            connectionStatus.classList.remove('disconnected');
 
             // Gửi tin nhắn
             function sendMessage() {
@@ -367,8 +414,20 @@
                 // Xóa nội dung input
                 messageInput.value = '';
 
-                // Gửi tin nhắn qua WebSocket nếu đã kết nối
-                if (isConnected) {
+                if (isDemo) {
+                    // Hiển thị trạng thái đang nhập
+                    typingIndicator.classList.add('active');
+
+                    // Mô phỏng thời gian phản hồi
+                    setTimeout(() => {
+                        // Ẩn trạng thái đang nhập
+                        typingIndicator.classList.remove('active');
+
+                        // Xử lý tin nhắn và hiển thị phản hồi
+                        processMessageDemo(message);
+                    }, 1500);
+                } else if (isConnected) {
+                    // Gửi tin nhắn qua WebSocket nếu đã kết nối
                     socket.send(JSON.stringify({
                         type: 'user_message',
                         content: message
@@ -379,12 +438,50 @@
                 }
             }
 
+            // Xử lý tin nhắn trong chế độ demo
+            function processMessageDemo(message) {
+                let response = '';
+
+                // Xử lý các lệnh
+                if (message === '!hello') {
+                    response = 'Xin chào! Tôi là bot chat AI sử dụng Gemini.';
+                } else if (message === '!help') {
+                    response = 'Các lệnh có sẵn:<br>!hello - Chào hỏi<br>!help - Hiển thị trợ giúp<br>!date - Hiển thị ngày giờ hiện tại<br>. [câu hỏi] - Đặt câu hỏi cho AI';
+                } else if (message === '!date' || message === '!time') {
+                    const now = new Date();
+                    const options = {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZone: 'Asia/Ho_Chi_Minh'
+                    };
+                    response = `Thời gian hiện tại: ${now.toLocaleDateString('vi-VN', options)}`;
+                } else if (message.startsWith('.')) {
+                    // Mô phỏng phản hồi từ Gemini AI
+                    const query = message.slice(1).trim();
+                    if (query === '') {
+                        response = 'Vui lòng nhập nội dung sau dấu "."';
+                    } else {
+                        response = `Đây là phản hồi mô phỏng cho câu hỏi: "${query}"<br><br>Đây là chế độ demo. Để nhận phản hồi thực từ Gemini AI, hãy kết nối với server backend.`;
+                    }
+                } else {
+                    response = 'Tôi không hiểu lệnh này. Hãy thử sử dụng "!help" để xem danh sách các lệnh có sẵn hoặc bắt đầu câu hỏi bằng dấu "."';
+                }
+
+                // Hiển thị phản hồi
+                addBotMessage(response);
+            }
+
             // Thêm tin nhắn của người dùng vào khung chat
             function addUserMessage(message) {
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message user-message';
                 messageElement.innerHTML = `
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSgV3cP3AkRj3GL5iFfFT8Kzc9IkcyA3FvqA&s" alt="User" class="message-avatar">
+                    <img src="https://i.imgur.com/qAUXxQK.png" alt="User" class="message-avatar">
                     <div class="message-content">
                         <div class="message-sender">Bạn</div>
                         <div class="message-text">${message}</div>
@@ -422,7 +519,7 @@
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message discord-message';
                 messageElement.innerHTML = `
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSgV3cP3AkRj3GL5iFfFT8Kzc9IkcyA3FvqA&s" alt="Discord" class="message-avatar">
+                    <img src="https://i.imgur.com/DYkRfgF.png" alt="Discord" class="message-avatar">
                     <div class="message-content">
                         <div class="message-sender">${author} (Discord)</div>
                         <div class="message-text">${content}</div>

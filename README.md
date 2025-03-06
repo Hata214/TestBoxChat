@@ -51,6 +51,42 @@ node index.js
 - **Prefix đơn giản**: Sử dụng dấu `.` làm prefix thay vì các lệnh dài như `!ask` hoặc `!chat`
 - **Hiển thị thời gian chính xác**: Lệnh `!date` hoặc `!time` hiển thị thời gian hiện tại theo múi giờ Việt Nam
 
+## Triển khai (Deployment)
+
+### Triển khai giao diện web lên Vercel
+
+1. Fork repository này hoặc tạo repository mới trên GitHub
+2. Đăng nhập vào [Vercel](https://vercel.com) và tạo dự án mới
+3. Kết nối với repository GitHub của bạn
+4. Vercel sẽ tự động phát hiện cấu hình từ file `vercel.json`
+5. Nhấp vào "Deploy" để triển khai giao diện web
+
+Lưu ý: Giao diện web trên Vercel sẽ chạy ở chế độ demo, không có kết nối thực với bot Discord.
+
+### Triển khai backend (WebSocket + Discord Bot)
+
+Để có kết nối thực với bot Discord, bạn cần triển khai backend lên một nền tảng hỗ trợ WebSocket như:
+
+#### Heroku:
+1. Tạo tài khoản [Heroku](https://heroku.com)
+2. Tạo ứng dụng mới
+3. Kết nối với repository GitHub hoặc sử dụng Heroku CLI
+4. Thêm các biến môi trường (DISCORD_TOKEN, GEMINI_API_KEY)
+5. Deploy ứng dụng
+
+#### Railway:
+1. Tạo tài khoản [Railway](https://railway.app)
+2. Tạo dự án mới từ GitHub
+3. Thêm các biến môi trường
+4. Deploy ứng dụng
+
+#### DigitalOcean:
+1. Tạo Droplet hoặc App Platform
+2. Cấu hình các biến môi trường
+3. Deploy ứng dụng
+
+Sau khi triển khai backend, cập nhật URL WebSocket trong giao diện web để kết nối với backend của bạn.
+
 ## Tùy chỉnh
 
 Bạn có thể thêm các lệnh mới hoặc điều chỉnh cách bot tương tác với Gemini AI bằng cách chỉnh sửa file `index.js`.
