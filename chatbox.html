@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord Chatbox với Gemini AI</title>
+    <title> Chatbox với Gemini AI</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -371,6 +371,56 @@
                 max-width: calc(100% - 55px);
             }
         }
+
+        .sheets-controls {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .sheets-controls h3 {
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .result-area {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -437,6 +487,30 @@
         <footer>
             <p>Discord Chatbox Bot với Gemini AI &copy; 2024</p>
         </footer>
+    </div>
+
+    <div class="sheets-controls">
+        <h3>Google Sheets Integration</h3>
+
+        <div class="form-group">
+            <label for="sheetRange">Sheet Range (e.g., Sheet1!A1:B10):</label>
+            <input type="text" id="sheetRange" value="Sheet1!A1:Z10">
+        </div>
+
+        <div class="form-group">
+            <label for="sheetData">Data (for write/append, JSON format):</label>
+            <textarea id="sheetData" rows="4">[[1, "Test Data"]]</textarea>
+        </div>
+
+        <div>
+            <button class="btn" onclick="readSheet()">Read Data</button>
+            <button class="btn" onclick="writeSheet()">Write Data</button>
+            <button class="btn" onclick="appendSheet()">Append Data</button>
+        </div>
+
+        <div class="result-area" id="sheetResult">
+            Results will appear here...
+        </div>
     </div>
 
     <script>
@@ -758,6 +832,55 @@
             // Focus vào input khi trang được tải
             messageInput.focus();
         });
+
+        // Hàm đọc dữ liệu từ Google Sheets
+        async function readSheet() {
+            try {
+                const range = document.getElementById('sheetRange').value;
+                const result = await window.sheetFunctions.readFromSheet(range);
+                displayResult(result);
+            } catch (error) {
+                displayError(error);
+            }
+        }
+
+        // Hàm ghi dữ liệu vào Google Sheets
+        async function writeSheet() {
+            try {
+                const range = document.getElementById('sheetRange').value;
+                const dataStr = document.getElementById('sheetData').value;
+                const values = JSON.parse(dataStr);
+                const result = await window.sheetFunctions.writeToSheet(range, values);
+                displayResult(result);
+            } catch (error) {
+                displayError(error);
+            }
+        }
+
+        // Hàm thêm dữ liệu vào Google Sheets
+        async function appendSheet() {
+            try {
+                const range = document.getElementById('sheetRange').value;
+                const dataStr = document.getElementById('sheetData').value;
+                const values = JSON.parse(dataStr);
+                const result = await window.sheetFunctions.appendToSheet(range, values);
+                displayResult(result);
+            } catch (error) {
+                displayError(error);
+            }
+        }
+
+        // Hiển thị kết quả
+        function displayResult(result) {
+            const resultArea = document.getElementById('sheetResult');
+            resultArea.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+        }
+
+        // Hiển thị lỗi
+        function displayError(error) {
+            const resultArea = document.getElementById('sheetResult');
+            resultArea.innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+        }
     </script>
 </body>
 

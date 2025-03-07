@@ -16,7 +16,7 @@ npm install
    - MESSAGE CONTENT INTENT
 5. Sao chép token của bot
 6. Lấy API key của Gemini AI từ [Google AI Studio](https://makersuite.google.com/app/apikey)
-7. Tạo file `.env` từ file `.env.example` và thêm:
+7. Tạo file `.env` và thêm:
    ```
    DISCORD_TOKEN=your_discord_bot_token_here
    GEMINI_API_KEY=your_gemini_api_key_here
@@ -63,73 +63,22 @@ node index.js
 
 Lưu ý: Giao diện web trên Vercel sẽ chạy ở chế độ demo, không có kết nối thực với bot Discord.
 
-### Triển khai backend lên Fly.io
+### Triển khai backend
 
-1. Cài đặt Fly CLI:
-   ```
-   # Trên macOS
-   brew install flyctl
-   
-   # Trên Windows (với PowerShell)
-   iwr https://fly.io/install.ps1 -useb | iex
-   
-   # Trên Linux
-   curl -L https://fly.io/install.sh | sh
-   ```
+Bạn có thể triển khai backend trên bất kỳ dịch vụ hosting nào hỗ trợ Node.js, như:
 
-2. Đăng nhập vào Fly.io:
-   ```
-   fly auth login
-   ```
+- [Railway](https://railway.app)
+- [DigitalOcean](https://www.digitalocean.com)
+- [Azure](https://azure.microsoft.com)
+- [Google Cloud](https://cloud.google.com)
 
-3. Khởi tạo ứng dụng (nếu chưa có file fly.toml):
-   ```
-   fly launch
-   ```
-
-4. Thiết lập các biến môi trường:
-   ```
-   fly secrets set DISCORD_TOKEN=your_discord_token_here
-   fly secrets set GEMINI_API_KEY=your_gemini_api_key_here
-   fly secrets set NODE_ENV=production
-   ```
-
-5. Triển khai ứng dụng:
-   ```
-   fly deploy
-   ```
-
-6. Kiểm tra logs:
-   ```
-   fly logs
-   ```
-
-7. Mở ứng dụng trong trình duyệt:
-   ```
-   fly open
-   ```
-
-Sau khi triển khai, bạn có thể truy cập ứng dụng tại `https://discord-chatbox.fly.dev` và kết nối WebSocket tại `wss://discord-chatbox.fly.dev`.
-
-### Triển khai backend lên các nền tảng khác
-
-#### Heroku:
-1. Tạo tài khoản [Heroku](https://heroku.com)
-2. Tạo ứng dụng mới
-3. Kết nối với repository GitHub hoặc sử dụng Heroku CLI
-4. Thêm các biến môi trường (DISCORD_TOKEN, GEMINI_API_KEY)
-5. Deploy ứng dụng
-
-#### Railway:
-1. Tạo tài khoản [Railway](https://railway.app)
-2. Tạo dự án mới từ GitHub
-3. Thêm các biến môi trường
-4. Deploy ứng dụng
-
-#### DigitalOcean:
-1. Tạo Droplet hoặc App Platform
-2. Cấu hình các biến môi trường
-3. Deploy ứng dụng
+Các bước cơ bản:
+1. Chọn nhà cung cấp hosting phù hợp
+2. Thiết lập các biến môi trường:
+   - DISCORD_TOKEN
+   - GEMINI_API_KEY
+   - NODE_ENV=production
+3. Deploy ứng dụng theo hướng dẫn của nhà cung cấp
 
 Sau khi triển khai backend, cập nhật URL WebSocket trong giao diện web để kết nối với backend của bạn.
 
@@ -139,4 +88,30 @@ Bạn có thể thêm các lệnh mới hoặc điều chỉnh cách bot tương
 
 ## Phiên bản Gemini AI
 
-Bot sử dụng phiên bản Gemini 1.5 Flash-002, là phiên bản ổn định mới nhất của Gemini AI (tính đến tháng 10/2024), cung cấp khả năng xử lý ngôn ngữ tự nhiên nhanh và hiệu quả. 
+Bot sử dụng phiên bản Gemini 1.5 Flash-002, là phiên bản ổn định mới nhất của Gemini AI, cung cấp khả năng xử lý ngôn ngữ tự nhiên nhanh và hiệu quả.
+
+# Chatbox with Google Sheets Integration
+
+Ứng dụng chatbox có tích hợp với Google Sheets, cho phép người dùng đọc, ghi và thêm dữ liệu vào Google Sheets.
+
+## Cài đặt
+
+1. Clone repository
+2. Chạy `npm install` để cài đặt các dependencies
+3. Tạo file credentials.json từ Google Cloud Console
+4. Cập nhật file .env với thông tin cần thiết
+5. Chạy `npm start` để khởi động ứng dụng
+
+## Tính năng
+
+- Chatbox cơ bản
+- Tích hợp với Google Sheets:
+  - Đọc dữ liệu từ Google Sheets
+  - Ghi dữ liệu vào Google Sheets
+  - Thêm dữ liệu vào Google Sheets
+
+## Cách sử dụng
+
+1. Truy cập ứng dụng tại http://localhost:3000
+2. Sử dụng chatbox như bình thường
+3. Sử dụng phần Google Sheets Integration để tương tác với Google Sheets 

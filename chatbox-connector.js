@@ -19,12 +19,11 @@ const corsAllowedOrigins = process.env.CORS_ALLOWED_ORIGINS ?
     process.env.CORS_ALLOWED_ORIGINS.split(',') :
     [
         'http://localhost:3000',
-        'http://localhost:5000',
-        'http://localhost:8080',
         'https://testboxchat.vercel.app',
         'https://test-box-chat-6w6gb3eai-hata214s-projects.vercel.app',
-        'https://discord-chatbox.fly.dev',
+        'https://test-box-chat-5zuuxs2co-hata214s-projects.vercel.app',
         'https://discord-chatbox-web.vercel.app'
+
     ];
 
 // Cấu hình CORS
@@ -285,6 +284,70 @@ app.use((err, req, res, next) => {
         message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
     });
 });
+
+// Hàm để đọc dữ liệu từ Google Sheets
+async function readFromSheet(range) {
+    try {
+        const response = await fetch(`/api/sheets/read?range=${encodeURIComponent(range)}`);
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+        return data.data;
+    } catch (error) {
+        console.error('Error reading from sheet:', error);
+        throw error;
+    }
+}
+
+// Hàm để ghi dữ liệu vào Google Sheets
+async function writeToSheet(range, values) {
+    try {
+        const response = await fetch('/api/sheets/write', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ range, values }),
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+        return data.result;
+    } catch (error) {
+        console.error('Error writing to sheet:', error);
+        throw error;
+    }
+}
+
+// Hàm để thêm dữ liệu vào Google Sheets
+async function appendToSheet(range, values) {
+    try {
+        const response = await fetch('/api/sheets/append', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ range, values }),
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+        return data.result;
+    } catch (error) {
+        console.error('Error appending to sheet:', error);
+        throw error;
+    }
+}
+
+// Thay thế bằng export nếu cần
+module.exports = {
+    readFromSheet,
+    writeToSheet,
+    appendToSheet
+};
 
 // Khởi động server
 const PORT = process.env.PORT || 8080;

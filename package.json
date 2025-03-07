@@ -9,12 +9,14 @@
         "dev": "NODE_ENV=development node chatbox-connector.js"
     },
     "dependencies": {
-        "discord.js": "^14.14.1",
-        "dotenv": "^16.3.1",
         "@google/generative-ai": "^0.2.1",
-        "express": "^4.18.2",
-        "ws": "^8.14.2",
+        "cors": "^2.8.5",
+        "discord.js": "^14.18.0",
+        "dotenv": "^16.4.7",
+        "express": "^4.21.2",
+        "googleapis": "^146.0.0",
         "http": "^0.0.1-security",
-        "cors": "^2.8.5"
+        "jsonwebtoken": "^9.0.2",
+        "ws": "^8.18.1"
     }
 }

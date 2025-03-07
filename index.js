@@ -1,13 +1,23 @@
 // Require necessary packages
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const express = require('express');
+const { google } = require('googleapis');
+const path = require('path');
 require('dotenv').config();
+const { readSheet, writeToSheet, appendToSheet } = require('./google-sheets-connector');
 
 // Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Initialize Gemini model
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
 // Function to get current date and time in Vietnamese format
 function getCurrentDateTime() {
@@ -114,6 +124,45 @@ client.on('messageCreate', async message => {
             console.error('Error:', error);
             message.reply('Xin lỗi, đã xảy ra lỗi khi xử lý yêu cầu của bạn.');
         }
+    }
+});
+
+// API endpoint để đọc dữ liệu từ Google Sheets
+app.get('/api/sheets/read', async (req, res) => {
+    try {
+        const range = req.query.range || 'Sheet1!A1:Z100';
+        const data = await readSheet(range);
+        res.json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// API endpoint để ghi dữ liệu vào Google Sheets
+app.post('/api/sheets/write', async (req, res) => {
+    try {
+        const { range, values } = req.body;
+        if (!range || !values) {
+            return res.status(400).json({ success: false, error: 'Range and values are required' });
+        }
+        const result = await writeToSheet(range, values);
+        res.json({ success: true, result });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// API endpoint để thêm dữ liệu vào Google Sheets
+app.post('/api/sheets/append', async (req, res) => {
+    try {
+        const { range, values } = req.body;
+        if (!range || !values) {
+            return res.status(400).json({ success: false, error: 'Range and values are required' });
+        }
+        const result = await appendToSheet(range, values);
+        res.json({ success: true, result });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

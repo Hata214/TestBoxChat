@@ -25,4 +25,7 @@ pids
 .idea/
 .vscode/
 *.swp
-*.swo 
+*.swo
+
+# Google Sheets credentials
+credentials.json 
