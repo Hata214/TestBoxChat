@@ -11,7 +11,7 @@ const { readSheet, writeToSheet, appendToSheet } = require('./google-sheets-conn
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Initialize Gemini model
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
+const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
 const app = express();
 const PORT = process.env.PORT || 3000;

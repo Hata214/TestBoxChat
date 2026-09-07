@@ -94,7 +94,7 @@ const client = new Client({
 
 // Khởi tạo Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
+const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
 
 // Lưu trữ kết nối WebSocket
 let connections = [];
@@ -237,11 +237,32 @@ client.on('messageCreate', async (message) => {
         return message.reply(`Thời gian hiện tại: ${now.toLocaleDateString('vi-VN', options)}`);
     }
 
-    // Xử lý câu hỏi AI với tiền tố dấu chấm "."
-    if (message.content.startsWith('.')) {
-        const query = message.content.slice(1).trim();
+    // Xử lý câu hỏi AI
+    // 1. Nếu tin nhắn bắt đầu bằng dấu chấm "." (ví dụ: ". bạn giúp được gì?")
+    // 2. Hoặc bắt đầu bằng !ask, !ai
+    // 3. Hoặc bot được nhắc đến (@Botchat) trong server
+    // 4. Hoặc nhắn tin riêng trong DM với bot
+    const isDirectMessage = !message.guild;
+    const isMentioned = message.mentions.has(client.user.id);
+    const hasDotPrefix = message.content.startsWith('.');
+    const hasAiCommand = message.content.startsWith('!ai ') || message.content.startsWith('!ask ');
+
+    if (hasDotPrefix || hasAiCommand || isMentioned || isDirectMessage) {
+        let query = message.content;
+
+        if (hasDotPrefix) {
+            query = query.slice(1).trim();
+        } else if (message.content.startsWith('!ai ')) {
+            query = query.slice(4).trim();
+        } else if (message.content.startsWith('!ask ')) {
+            query = query.slice(5).trim();
+        } else if (isMentioned) {
+            // Xóa mention bot khỏi prompt
+            query = query.replace(new RegExp(`<@!?${client.user.id}>`, 'g'), '').trim();
+        }
+
         if (!query) {
-            return message.reply('Vui lòng nhập nội dung sau dấu "."');
+            return message.reply('Vui lòng nhập nội dung câu hỏi!');
         }
 
         try {
@@ -249,7 +270,7 @@ client.on('messageCreate', async (message) => {
 
             const currentDate = new Date();
             const dateInfo = `Thông tin thời gian hiện tại: Hôm nay là ngày ${currentDate.getDate()} tháng ${currentDate.getMonth() + 1} năm ${currentDate.getFullYear()}. Giờ hiện tại là ${currentDate.getHours()}:${currentDate.getMinutes()}.`;
-            const enhancedPrompt = `${dateInfo}\n\nCâu hỏi hoặc yêu cầu: ${query}`;
+            const enhancedPrompt = `${dateInfo}\n\nCâu hỏi hoặc yêu cầu của người dùng: ${query}`;
 
             const result = await model.generateContent(enhancedPrompt);
             const responseText = result.response.text();
@@ -263,7 +284,7 @@ client.on('messageCreate', async (message) => {
             }
         } catch (error) {
             console.error('Gemini AI Error:', error);
-            message.reply('Xin lỗi, tôi đang gặp vấn đề khi xử lý yêu cầu của bạn.');
+            message.reply('Xin lỗi, tôi đang gặp vấn đề khi xử lý yêu cầu của bạn bằng Gemini AI.');
         }
     }
 });
