@@ -4,7 +4,7 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const cors = require('cors');
 require('dotenv').config();
@@ -84,6 +84,11 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages
+    ],
+    partials: [
+        Partials.Channel,
+        Partials.Message
     ]
 });
 
@@ -190,6 +195,9 @@ wss.on('connection', (ws, req) => {
 
 // Xử lý tin nhắn từ Discord
 client.on('messageCreate', async (message) => {
+    // Log tin nhắn nhận được để debug
+    console.log(`[Discord Received] From: ${message.author.tag} | Content: "${message.content}" | Channel: ${message.channel.id}`);
+
     // Bỏ qua tin nhắn từ bot
     if (message.author.bot) return;
 
