@@ -203,8 +203,61 @@ client.on('messageCreate', async (message) => {
         }));
     });
 
-    // Xử lý các lệnh như trong file index.js
-    // ...
+    // Lệnh chào hỏi
+    if (message.content.startsWith('!hello')) {
+        return message.reply('Xin chào! Tôi là bot chat AI sử dụng Gemini.');
+    }
+
+    // Lệnh trợ giúp
+    if (message.content.startsWith('!help')) {
+        return message.reply('Các lệnh có sẵn:\n!hello - Chào hỏi\n!help - Hiển thị trợ giúp\n!date - Hiển thị ngày giờ hiện tại\n. [câu hỏi] - Đặt câu hỏi cho AI');
+    }
+
+    // Lệnh xem ngày giờ
+    if (message.content.startsWith('!date') || message.content.startsWith('!time')) {
+        const now = new Date();
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'Asia/Ho_Chi_Minh'
+        };
+        return message.reply(`Thời gian hiện tại: ${now.toLocaleDateString('vi-VN', options)}`);
+    }
+
+    // Xử lý câu hỏi AI với tiền tố dấu chấm "."
+    if (message.content.startsWith('.')) {
+        const query = message.content.slice(1).trim();
+        if (!query) {
+            return message.reply('Vui lòng nhập nội dung sau dấu "."');
+        }
+
+        try {
+            await message.channel.sendTyping();
+
+            const currentDate = new Date();
+            const dateInfo = `Thông tin thời gian hiện tại: Hôm nay là ngày ${currentDate.getDate()} tháng ${currentDate.getMonth() + 1} năm ${currentDate.getFullYear()}. Giờ hiện tại là ${currentDate.getHours()}:${currentDate.getMinutes()}.`;
+            const enhancedPrompt = `${dateInfo}\n\nCâu hỏi hoặc yêu cầu: ${query}`;
+
+            const result = await model.generateContent(enhancedPrompt);
+            const responseText = result.response.text();
+
+            if (responseText.length <= 2000) {
+                await message.reply(responseText);
+            } else {
+                for (let i = 0; i < responseText.length; i += 2000) {
+                    await message.channel.send(responseText.substring(i, i + 2000));
+                }
+            }
+        } catch (error) {
+            console.error('Gemini AI Error:', error);
+            message.reply('Xin lỗi, tôi đang gặp vấn đề khi xử lý yêu cầu của bạn.');
+        }
+    }
 });
 
 // Đăng nhập vào Discord
